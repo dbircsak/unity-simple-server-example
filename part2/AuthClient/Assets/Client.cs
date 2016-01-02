@@ -251,7 +251,7 @@ public class Client : MonoBehaviour
         }
     }
 
-    void OnApplicationQuite()
+    void OnApplicationQuit()
     {
         // Gracefully disconnect
         if (m_hostId != -1 && m_serverConnectionId != -1)

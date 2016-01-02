@@ -232,7 +232,7 @@ public class Server : MonoBehaviour
         }
     }
 
-    void OnApplicationQuite()
+    void OnApplicationQuit()
     {
         // Gracefully disconnect
         if (m_hostId != -1 && clientList.Count > 0)
