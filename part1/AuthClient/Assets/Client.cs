@@ -29,17 +29,18 @@ public class Client : MonoBehaviour
         NetworkTransport.Connect(m_hostId, System.Net.IPAddress.Loopback.ToString(), 25000, 0, out error);
     }
 
-    struct SphereData
+    class SphereData
     {
+        public int id;
         public float lastUpdate;
         public GameObject obj;
     }
     // Remeber all spheres we spawned
-    Dictionary<int, SphereData> sphereDictionary = new Dictionary<int, SphereData>();
+    List<SphereData> sphereList = new List<SphereData>();
 
     void OnGUI()
     {
-        GUI.Label(new Rect(10, 10, 100, 20), string.Format("{0} Spheres", sphereDictionary.Count));
+        GUI.Label(new Rect(10, 10, 100, 20), string.Format("{0} Spheres", sphereList.Count));
         if (connected) // Set when ConnectEvent received
             GUI.Label(new Rect(10, 30, 100, 20), "Connected");
         else
@@ -114,14 +115,13 @@ public class Client : MonoBehaviour
         SphereData sd;
         foreach (var networkData in tmpList)
         {
+            sd = sphereList.FirstOrDefault(item => item.id == networkData.id);
             // Do we have this sphere already?
-            if (sphereDictionary.ContainsKey(networkData.id))
+            if (sd != null)
             {
-                sd = sphereDictionary[networkData.id];
                 // Update position
                 sd.obj.transform.position = new Vector3(networkData.x, networkData.y, networkData.z);
                 sd.lastUpdate = Time.realtimeSinceStartup;
-                sphereDictionary[networkData.id] = sd;
             }
             else
             {
@@ -133,9 +133,11 @@ public class Client : MonoBehaviour
                 // Set color
                 sphere.GetComponent<Renderer>().material.color = new Color(networkData.r, networkData.g, networkData.b);
 
+                sd = new SphereData();
+                sd.id = networkData.id;
                 sd.obj = sphere;
                 sd.lastUpdate = Time.realtimeSinceStartup;
-                sphereDictionary.Add(networkData.id, sd);
+                sphereList.Add(sd);
             }
         }
     }
@@ -143,13 +145,13 @@ public class Client : MonoBehaviour
     void CleanupSpheres()
     {
         // Clean up null game objects
-        sphereDictionary = sphereDictionary.Where(pair => pair.Value.obj.gameObject != null).ToDictionary(pair => pair.Key, pair => pair.Value); // Ahhh Ling!
+        sphereList.RemoveAll(item => item.obj == null);
 
-        foreach (var pair in sphereDictionary)
+        foreach (var item in sphereList)
         {
             // Haven't heard about sphere in a while so destroy it
-            if (pair.Value.obj.gameObject != null && pair.Value.lastUpdate + 1.0f < Time.realtimeSinceStartup)
-                Destroy(pair.Value.obj.gameObject); // Note this becomes null only after Update
+            if (item.obj.gameObject != null && item.lastUpdate + 1.0f < Time.realtimeSinceStartup)
+                Destroy(item.obj.gameObject); // Note this becomes null only after Update
         }
     }
 }
