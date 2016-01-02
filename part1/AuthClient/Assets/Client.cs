@@ -99,7 +99,7 @@ public class Client : MonoBehaviour
         NetworkData tmpData;
 
         // Read to the end
-        while (br.PeekChar() != -1)
+        while (stream.Position != buffer.Length)
         {
             // Deserialize
             tmpData.id = br.ReadInt32();
