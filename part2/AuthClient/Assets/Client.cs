@@ -113,6 +113,7 @@ public class Client : MonoBehaviour
         public float b;
     }
 
+    // Server sent us a packet about all connected clients or an update for all cube positions
     void ProcessServerData(byte[] buffer)
     {
         MemoryStream stream = new MemoryStream(buffer);

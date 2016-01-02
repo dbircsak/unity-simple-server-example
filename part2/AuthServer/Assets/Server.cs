@@ -30,6 +30,7 @@ public class Server : MonoBehaviour
         reliableChannel = config.AddChannel(QosType.Reliable);
         HostTopology topology = new HostTopology(config, 5);
 #if UNITY_EDITOR
+        // Listen on port 25000
         m_hostId = NetworkTransport.AddHostWithSimulator(topology, 200, 400, 25000);
 #else
         m_hostId = NetworkTransport.AddHost(topology, 25000);
@@ -80,6 +81,7 @@ public class Server : MonoBehaviour
         }
     }
 
+    // Client connected so create cube for them
     void ClientConnected(int connectionId)
     {
         string address;
@@ -116,6 +118,7 @@ public class Server : MonoBehaviour
         Information = (1 << 2)
     }
 
+    // Send client data to all clients whenever someone connects or disconnects
     void SendClientInformation()
     {
         MemoryStream stream = new MemoryStream();
@@ -166,7 +169,7 @@ public class Server : MonoBehaviour
         ClientData cd = clientList.FirstOrDefault(item => item.connectionId == connectionId);
         if (cd == null)
         {
-            Debug.Log("Client input that we didn't know about!?");
+            Debug.Log("Client that we didn't know about!?");
             return;
         }
 
