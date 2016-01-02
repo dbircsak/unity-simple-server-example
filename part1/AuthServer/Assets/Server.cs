@@ -164,7 +164,7 @@ public class Server : MonoBehaviour
         }
     }
 
-    void OnApplicationQuite()
+    void OnApplicationQuit()
     {
         // Gracefully disconnect
         if (m_hostId != -1 && connectList.Count > 0)
