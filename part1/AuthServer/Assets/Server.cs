@@ -54,7 +54,8 @@ public class Server : MonoBehaviour
             if (connectList.Count == 0 || sphereList.Count == 0)
                 continue;
 
-            bw.Seek(0, SeekOrigin.Begin);
+            // Reset stream
+            stream.SetLength(0);
             foreach (var item in sphereList)
             {
                 bw.Write(item.GetInstanceID());
@@ -160,6 +161,20 @@ public class Server : MonoBehaviour
         {
             yield return new WaitForSeconds(UnityEngine.Random.value);
             StartCoroutine(SpawnCoroutine());
+        }
+    }
+
+    void OnApplicationQuite()
+    {
+        // Gracefully disconnect
+        if (m_hostId != -1 && connectList.Count > 0)
+        {
+            byte error;
+
+            foreach (var item in connectList)
+            {
+                NetworkTransport.Disconnect(m_hostId, item, out error);
+            }
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 public class Client : MonoBehaviour
 {
     int m_hostId = -1;
-    bool connected = false;
+    int m_serverConnectionId = -1;
 
     void Start()
     {
@@ -41,7 +41,7 @@ public class Client : MonoBehaviour
     void OnGUI()
     {
         GUI.Label(new Rect(10, 10, 100, 20), string.Format("{0} Spheres", sphereList.Count));
-        if (connected) // Set when ConnectEvent received
+        if (m_serverConnectionId != -1) // Set when ConnectEvent received
             GUI.Label(new Rect(10, 30, 100, 20), "Connected");
         else
             GUI.Label(new Rect(10, 30, 100, 20), "Disconnected");
@@ -73,10 +73,10 @@ public class Client : MonoBehaviour
             case NetworkEventType.Nothing:
                 break;
             case NetworkEventType.ConnectEvent:
-                connected = true;
+                m_serverConnectionId = connectionId;
                 break;
             case NetworkEventType.DisconnectEvent:
-                connected = false;
+                m_serverConnectionId = -1;
                 break;
             case NetworkEventType.DataEvent:
                 //Debug.Log(string.Format("Got data size {0}", receivedSize));
@@ -112,6 +112,9 @@ public class Client : MonoBehaviour
             tmpList.Add(tmpData);
         }
 
+        // Clean up null game objects
+        sphereList.RemoveAll(item => item.obj == null);
+
         SphereData sd;
         foreach (var networkData in tmpList)
         {
@@ -144,14 +147,21 @@ public class Client : MonoBehaviour
 
     void CleanupSpheres()
     {
-        // Clean up null game objects
-        sphereList.RemoveAll(item => item.obj == null);
-
         foreach (var item in sphereList)
         {
             // Haven't heard about sphere in a while so destroy it
             if (item.obj.gameObject != null && item.lastUpdate + 1.0f < Time.realtimeSinceStartup)
                 Destroy(item.obj.gameObject); // Note this becomes null only after Update
+        }
+    }
+
+    void OnApplicationQuite()
+    {
+        // Gracefully disconnect
+        if (m_hostId != -1 && m_serverConnectionId != -1)
+        {
+            byte error;
+            NetworkTransport.Disconnect(m_hostId, m_serverConnectionId, out error);
         }
     }
 }
