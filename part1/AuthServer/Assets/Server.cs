@@ -10,7 +10,7 @@ public class Server : MonoBehaviour
 {
     byte reliableChannel;
     int m_hostId = -1;
-    Dictionary<int, IPEndPoint> connectDictionary = new Dictionary<int, IPEndPoint>();
+    List<int> connectList = new List<int>();
 
     // Remeber all spheres we spawned
     List<GameObject> sphereList = new List<GameObject>();
@@ -40,19 +40,21 @@ public class Server : MonoBehaviour
     // Send sphere data every so often to those connected
     IEnumerator SendCoroutine()
     {
+        // Serialize list
+        MemoryStream stream = new MemoryStream();
+        // Don't use BinaryFormatter as this stores meta data!!
+        BinaryWriter bw = new BinaryWriter(stream);
+        Renderer rend;
+
         while (true)
         {
             yield return new WaitForSeconds(0.1f);
 
             // Anything to do?
-            if (connectDictionary.Count == 0 || sphereList.Count == 0)
+            if (connectList.Count == 0 || sphereList.Count == 0)
                 continue;
 
-            // Serialize list
-            MemoryStream stream = new MemoryStream();
-            // Don't use BinaryFormatter as this stores meta data!!
-            BinaryWriter bw = new BinaryWriter(stream);
-            Renderer rend;
+            bw.Seek(0, SeekOrigin.Begin);
             foreach (var item in sphereList)
             {
                 bw.Write(item.GetInstanceID());
@@ -74,9 +76,9 @@ public class Server : MonoBehaviour
             byte[] buffer = stream.ToArray();
             byte error;
             //Debug.Log(string.Format("Sending data size {0}", buffer.Length));
-            foreach (var pair in connectDictionary)
+            foreach (var item in connectList)
             {
-                NetworkTransport.Send(m_hostId, pair.Key, reliableChannel, buffer, buffer.Length, out error);
+                NetworkTransport.Send(m_hostId, item, reliableChannel, buffer, buffer.Length, out error);
             }
         }
     }
@@ -113,12 +115,12 @@ public class Server : MonoBehaviour
                 NetworkID network;
                 NodeID dstNode;
                 NetworkTransport.GetConnectionInfo(m_hostId, connectionId, out address, out port, out network, out dstNode, out error);
-                connectDictionary.Add(connectionId, new IPEndPoint(IPAddress.Parse(address), port));
-                Debug.Log(string.Format("Client connected", connectionId));
+                connectList.Add(connectionId);
+                Debug.Log(string.Format("Client {0} connected", new IPEndPoint(IPAddress.Parse(address), port).ToString()));
                 break;
             case NetworkEventType.DisconnectEvent:
-                connectDictionary.Remove(connectionId);
-                Debug.Log(string.Format("Client disconnected", connectionId));
+                connectList.Remove(connectionId);
+                Debug.Log("Client disconnected");
                 break;
             case NetworkEventType.DataEvent:
                 Debug.Log(string.Format("Got data size {0}", receivedSize));
@@ -130,7 +132,7 @@ public class Server : MonoBehaviour
     {
         if (sphereList.Count > 50)
         {
-            Debug.Log(string.Format("Spawning too many spheres to send over the network"));
+            Debug.Log("Spawning too many spheres to send over the network");
             yield break;
         }
 
