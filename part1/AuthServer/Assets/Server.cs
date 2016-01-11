@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Types;
-using System.IO;
 using System.Net;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,9 +40,7 @@ public class Server : MonoBehaviour
     IEnumerator SendCoroutine()
     {
         // Serialize list
-        MemoryStream stream = new MemoryStream();
-        // Don't use BinaryFormatter as this stores meta data!!
-        BinaryWriter bw = new BinaryWriter(stream);
+        NetworkWriter nw = new NetworkWriter();
         Renderer rend;
 
         while (true)
@@ -55,26 +52,24 @@ public class Server : MonoBehaviour
                 continue;
 
             // Reset stream
-            stream.SetLength(0);
+            nw.SeekZero();
             foreach (var item in sphereList)
             {
-                bw.Write(item.GetInstanceID());
-                bw.Write(item.transform.position.x);
-                bw.Write(item.transform.position.y);
-                bw.Write(item.transform.position.z);
+                nw.Write(item.GetInstanceID());
+                nw.Write(item.transform.position);
                 rend = item.GetComponent<Renderer>();
-                bw.Write(rend.material.color.r);
-                bw.Write(rend.material.color.g);
-                bw.Write(rend.material.color.b);
+                nw.Write(rend.material.color.r);
+                nw.Write(rend.material.color.g);
+                nw.Write(rend.material.color.b);
 
                 // Don't pack too much
                 // Fix me! Send more than one packet instead
-                if (stream.Position > 1300)
+                if (nw.Position > 1300)
                     break;
             }
 
             // Send data out
-            byte[] buffer = stream.ToArray();
+            byte[] buffer = nw.ToArray();
             byte error;
             //Debug.Log(string.Format("Sending data size {0}", buffer.Length));
             foreach (var item in connectList)

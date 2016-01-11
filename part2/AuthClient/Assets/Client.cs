@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.Networking.Types;
 using System;
-using System.IO;
 using System.Net;
 using System.Collections;
 using System.Collections.Generic;

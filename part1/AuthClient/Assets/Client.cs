@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,9 +49,7 @@ public class Client : MonoBehaviour
     struct NetworkData
     {
         public int id;
-        public float x;
-        public float y;
-        public float z;
+        public Vector3 pos;
         public float r;
         public float g;
         public float b;
@@ -91,24 +88,20 @@ public class Client : MonoBehaviour
 
     void LoadSpheres(byte[] buffer)
     {
-        MemoryStream stream = new MemoryStream(buffer);
-        // Don't use BinaryFormatter as this stores meta data!!
-        BinaryReader br = new BinaryReader(stream);
+        NetworkReader nr = new NetworkReader(buffer);
 
         List<NetworkData> tmpList = new List<NetworkData>();
         NetworkData tmpData;
 
         // Read to the end
-        while (stream.Position != buffer.Length)
+        while (nr.Position != buffer.Length)
         {
             // Deserialize
-            tmpData.id = br.ReadInt32();
-            tmpData.x = br.ReadSingle();
-            tmpData.y = br.ReadSingle();
-            tmpData.z = br.ReadSingle();
-            tmpData.r = br.ReadSingle();
-            tmpData.g = br.ReadSingle();
-            tmpData.b = br.ReadSingle();
+            tmpData.id = nr.ReadInt32();
+            tmpData.pos = nr.ReadVector3();
+            tmpData.r = nr.ReadSingle();
+            tmpData.g = nr.ReadSingle();
+            tmpData.b = nr.ReadSingle();
             tmpList.Add(tmpData);
         }
 
@@ -123,7 +116,7 @@ public class Client : MonoBehaviour
             if (sd != null)
             {
                 // Update position
-                sd.obj.transform.position = new Vector3(networkData.x, networkData.y, networkData.z);
+                sd.obj.transform.position = networkData.pos;
                 sd.lastUpdate = Time.realtimeSinceStartup;
             }
             else
@@ -132,7 +125,7 @@ public class Client : MonoBehaviour
                 GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 // No rigidbody here!
                 // Set position
-                sphere.transform.position = new Vector3(networkData.x, networkData.y, networkData.z);
+                sphere.transform.position = networkData.pos;
                 // Set color
                 sphere.GetComponent<Renderer>().material.color = new Color(networkData.r, networkData.g, networkData.b);
 
