@@ -121,31 +121,28 @@ public class Server : MonoBehaviour
     // Send client data to all clients whenever someone connects or disconnects
     void SendClientInformation()
     {
-        MemoryStream stream = new MemoryStream();
-        BinaryWriter bw = new BinaryWriter(stream);
+        NetworkWriter nr = new NetworkWriter();
         Renderer rend;
 
-        bw.Write((byte)PacketTypeEnum.Information);
+        nr.Write((byte)PacketTypeEnum.Information);
         foreach (var item in clientList)
         {
-            bw.Write(item.obj.GetInstanceID());
-            bw.Write(item.name);
-            bw.Write(item.obj.transform.position.x);
-            bw.Write(item.obj.transform.position.y);
-            bw.Write(item.obj.transform.position.z);
+            nr.Write(item.obj.GetInstanceID());
+            nr.Write(item.name);
+            nr.Write(item.obj.transform.position);
             rend = item.obj.GetComponent<Renderer>();
-            bw.Write(rend.material.color.r);
-            bw.Write(rend.material.color.g);
-            bw.Write(rend.material.color.b);
+            nr.Write(rend.material.color.r);
+            nr.Write(rend.material.color.g);
+            nr.Write(rend.material.color.b);
 
             // Don't pack too much
             // Fix me! Send more than one packet instead
-            if (stream.Position > 1300)
+            if (nr.Position > 1300)
                 break;
         }
 
         // Send data out
-        byte[] buffer = stream.ToArray();
+        byte[] buffer = nr.ToArray();
         byte error;
         //Debug.Log(string.Format("Sending data size {0}", buffer.Length));
         foreach (var item in clientList)
@@ -193,8 +190,7 @@ public class Server : MonoBehaviour
     // Send client position data every so often to those connected
     IEnumerator SendPositionCoroutine()
     {
-        MemoryStream stream = new MemoryStream();
-        BinaryWriter bw = new BinaryWriter(stream);
+        NetworkWriter nr = new NetworkWriter();
 
         while (true)
         {
@@ -205,24 +201,22 @@ public class Server : MonoBehaviour
                 continue;
 
             // Reset stream
-            stream.SetLength(0);
+            nr.SeekZero();
 
-            bw.Write((byte)PacketTypeEnum.Position);
+            nr.Write((byte)PacketTypeEnum.Position);
             foreach (var item in clientList)
             {
-                bw.Write(item.obj.GetInstanceID());
-                bw.Write(item.obj.transform.position.x);
-                bw.Write(item.obj.transform.position.y);
-                bw.Write(item.obj.transform.position.z);
+                nr.Write(item.obj.GetInstanceID());
+                nr.Write(item.obj.transform.position);
 
                 // Don't pack too much
                 // Fix me! Send more than one packet instead
-                if (stream.Position > 1300)
+                if (nr.Position > 1300)
                     break;
             }
 
             // Send data out
-            byte[] buffer = stream.ToArray();
+            byte[] buffer = nr.ToArray();
             byte error;
             //Debug.Log(string.Format("Sending data size {0}", buffer.Length));
             foreach (var item in clientList)

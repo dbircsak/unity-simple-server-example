@@ -96,18 +96,14 @@ public class Client : MonoBehaviour
     class PositionData
     {
         public int objectId;
-        public float x;
-        public float y;
-        public float z;
+        public Vector3 pos;
     }
 
     class InformationData
     {
         public int objectId;
         public string name;
-        public float x;
-        public float y;
-        public float z;
+        public Vector3 pos;
         public float r;
         public float g;
         public float b;
@@ -116,22 +112,19 @@ public class Client : MonoBehaviour
     // Server sent us a packet about all connected clients or an update for all cube positions
     void ProcessServerData(byte[] buffer)
     {
-        MemoryStream stream = new MemoryStream(buffer);
-        BinaryReader br = new BinaryReader(stream);
+        NetworkReader nr = new NetworkReader(buffer);
 
-        PacketTypeEnum packetType = (PacketTypeEnum)br.ReadByte();
+        PacketTypeEnum packetType = (PacketTypeEnum)nr.ReadByte();
         switch (packetType)
         {
             case PacketTypeEnum.Position:
                 List<PositionData> posList = new List<PositionData>();
                 PositionData p;
-                while (stream.Position != buffer.Length)
+                while (nr.Position != buffer.Length)
                 {
                     p = new PositionData();
-                    p.objectId = br.ReadInt32();
-                    p.x = br.ReadSingle();
-                    p.y = br.ReadSingle();
-                    p.z = br.ReadSingle();
+                    p.objectId = nr.ReadInt32();
+                    p.pos = nr.ReadVector3();
                     posList.Add(p);
                 }
 
@@ -144,23 +137,21 @@ public class Client : MonoBehaviour
                     if (p == null)
                         Debug.Log("Cannot find game object");
                     else
-                        item.obj.transform.position = new Vector3(p.x, p.y, p.z);
+                        item.obj.transform.position = p.pos;
                 }
                 break;
             case PacketTypeEnum.Information:
                 List<InformationData> infoList = new List<InformationData>();
                 InformationData info;
-                while (stream.Position != buffer.Length)
+                while (nr.Position != buffer.Length)
                 {
                     info = new InformationData();
-                    info.objectId = br.ReadInt32();
-                    info.name = br.ReadString();
-                    info.x = br.ReadSingle();
-                    info.y = br.ReadSingle();
-                    info.z = br.ReadSingle();
-                    info.r = br.ReadSingle();
-                    info.g = br.ReadSingle();
-                    info.b = br.ReadSingle();
+                    info.objectId = nr.ReadInt32();
+                    info.name = nr.ReadString();
+                    info.pos = nr.ReadVector3();
+                    info.r = nr.ReadSingle();
+                    info.g = nr.ReadSingle();
+                    info.b = nr.ReadSingle();
                     infoList.Add(info);
                 }
 
@@ -185,7 +176,7 @@ public class Client : MonoBehaviour
                         GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                         // No CharacterController here!
                         // Set position
-                        obj.transform.position = new Vector3(item.x, item.y, item.z);
+                        obj.transform.position = item.pos;
                         // Set color
                         obj.GetComponent<Renderer>().material.color = new Color(item.r, item.g, item.b);
 
